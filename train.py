@@ -21,6 +21,7 @@ def parse_args():
     parser.add_argument('--data_path', type=str, required=True)
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--model_barebone', type=str, default='resnet50')
+    parser.add_argument('--learning_rate', type=float, default=5e-4)
     parser.add_argument('--max_epochs', type=int, default=50)
     parser.add_argument('--log_dir', type=str, default='./logs')
     parser.add_argument('--resume_from_checkpoint', type=str, default=None)
@@ -55,7 +56,7 @@ def train(args):
     model = ImageClassifier(
         classes=classes,
         barebone=args.model_barebone, # 'vit_b_16'
-        learning_rate=5e-4,
+        learning_rate=args.learning_rate,
         loss_type='bce'
     )
 
