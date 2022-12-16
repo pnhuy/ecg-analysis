@@ -80,7 +80,7 @@ def main(args):
                 prob=prob
             )
 
-    os.makedirs(os.path.join(args.log_dir, 'cam_output'))
+    os.makedirs(os.path.join(args.log_dir, 'cam_output'), exist_ok=True)
     with open(os.path.join(args.log_dir, 'cam_output', 'predictions.json'), 'w') as f:
         json.dump(predictions, f)
 

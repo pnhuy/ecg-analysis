@@ -47,7 +47,6 @@ def poincare(nni=None,
         figsize = (6, 6)
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
-    ax = fig.add_subplot(111)
     ax.set_xlim([100, 400])
     ax.set_ylim([100, 400])
     # ax.plot(x1, x2, markersize=2)

@@ -43,8 +43,11 @@ class ImageClassifier(pl.LightningModule):
 
     
     def configure_optimizers(self):
-        self.optimizer = optim.AdamW(self.network.parameters(), lr=self.learning_rate)
-        self.scheduler_lr = lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=10, eta_min=1e-5)
+        # self.optimizer = optim.AdamW(self.network.parameters(), lr=self.learning_rate)
+        self.optimizer = optim.SGD(self.network.parameters(), lr=self.learning_rate)
+        # self.scheduler_lr = lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=10, eta_min=1e-5)
+        self.scheduler_lr = lr_scheduler.CyclicLR(self.optimizer, base_lr=self.learning_rate, # cycle_momentum=False, 
+                                                  max_lr=self.learning_rate*10, step_size_up=5, mode="triangular2")
         return [self.optimizer], [self.scheduler_lr]
 
     def forward(self, image):

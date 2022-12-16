@@ -1,6 +1,8 @@
 import argparse
 import ast
 import os
+from multiprocessing import Pool, cpu_count
+from functools import partial
 
 import biosppy
 import matplotlib.pyplot as plt
@@ -43,30 +45,59 @@ def aggregate_diagnostic(agg_df, y_dic):
     return list(set(tmp))
 
 
-def poincare(nni=None,
+def poincare(nnis=None,
              rpeaks=None, marker='o',
              figsize=None, fp=None):
-    # Check input values
-    nn = pyhrv.utils.check_input(nni, rpeaks)
-
-    # Prepare Poincaré data
-    x1 = np.asarray(nn[:-1])
-    x2 = np.asarray(nn[1:])
-
     if figsize is None:
         figsize = (6, 6)
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
-    ax = fig.add_subplot(111)
-    # ax.set_xlim([200, 800])
-    # ax.set_ylim([200, 800])
-    # ax.plot(x1, x2, markersize=2)
-    ax.plot(x1, x2, '%s' % marker, markersize=25, alpha=0.5, zorder=1, color='black')
-    plt.axis('off')
-    if fp: 
-        plt.savefig(fp)
-    plt.close()
+    ax.set_xlim([180, 700])
+    ax.set_ylim([180, 700])
 
+    # Check input values
+    for nni in nnis:
+        nn = pyhrv.utils.check_input(nni, rpeaks)
+
+        # Prepare Poincaré data
+        x1 = np.asarray(nn[:-1])
+        x2 = np.asarray(nn[1:])
+
+        # ax.plot(x1, x2, markersize=2)
+        ax.plot(x1, x2, '%s' % marker, markersize=15, alpha=0.5, zorder=1, color='black')
+        ax.set_axis_off()
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_yticklabels([])
+        ax.set_xticklabels([])
+    
+    # plt.axis('off')
+    if fp: 
+        plt.savefig(fp, bbox_inches='tight')
+    
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
+
+# def process_row(row, dataset, sampling_rate, pbar):
+#     idx, sample = row
+#     # sample = data[idx]
+#     fp = os.path.join('dataset', 'ptb-xl', 'processed', dataset, f'{idx}.png')
+#     # if os.path.isfile(fp):
+#     #     continue
+#     nnis = []
+#     for i in range(sample.shape[1]):
+#         try:
+#             _, rpeaks = biosppy.signals.ecg.ecg(sample[:, i], sampling_rate=sampling_rate, show=False)[1:3]
+#             nni = tools.nn_intervals(rpeaks)
+#             nnis.append(nni)
+#         except ValueError:
+#             pass
+#     # import pdb; pdb.set_trace()
+#     poincare(fp=fp, nnis=nnis)
+#     pbar.update(1)
+#     return 0
 
 def preprocessed(args):
     path = args.data_path
@@ -111,12 +142,18 @@ def preprocessed(args):
         os.makedirs(os.path.join('dataset', 'ptb-xl', 'processed', dataset), exist_ok=True)
         for idx, sample in tqdm(enumerate(data), desc=dataset, total=data.shape[0]):
             fp = os.path.join('dataset', 'ptb-xl', 'processed', dataset, f'{idx}.png')
-            # if os.path.isfile(fp):
-            #     continue
-            _, rpeaks = biosppy.signals.ecg.ecg(sample[:, 0], sampling_rate=sampling_rate, show=False)[1:3]
-            nni = tools.nn_intervals(rpeaks)
+            if os.path.isfile(fp):
+                continue
+            nnis = []
+            for i in range(sample.shape[1]):
+                try:
+                    _, rpeaks = biosppy.signals.ecg.ecg(sample[:, i], sampling_rate=sampling_rate, show=False)[1:3]
+                    nni = tools.nn_intervals(rpeaks)
+                    nnis.append(nni)
+                except ValueError:
+                    pass
             # import pdb; pdb.set_trace()
-            poincare(fp=fp, nni=nni)
+            poincare(fp=fp, nnis=nnis)
 
     # Process labels
     mlb = MultiLabelBinarizer().fit(y_train)
