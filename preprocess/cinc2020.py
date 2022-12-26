@@ -27,26 +27,26 @@ SNOMED_CT_MAPPINGS = {
     "426783006": "SNR",
     "427084000": "STach",
 
-    # "39732003": "LAD",
-    # "270492004": "IAVB",
-    # "164890007": "AFL",
-    # "713427006": "CRBBB",
-    # "59118001": "CRBBB",
-    # "713426002": "IRBBB",
-    # "445118002": "LAnFB",
-    # "251146004": "LQRSV",
-    # "698252002": "NSIVCB",
-    # "427172004": "PVC",
-    # "17338001": "PVC",
-    # "164947007": "LPR",
-    # "111975006": "LQT",
-    # "164917005": "QAb",
-    # "47665007": "RAD",
-    # "59118001": "RBBB",
-    # "63593006": "SVPB",
-    # "164934002": "TAb",
-    # "59931005": "TInv",
-    # "17338001": "VPB",
+    "39732003": "LAD",
+    "270492004": "IAVB",
+    "164890007": "AFL",
+    "713427006": "CRBBB",
+    "59118001": "CRBBB",
+    "713426002": "IRBBB",
+    "445118002": "LAnFB",
+    "251146004": "LQRSV",
+    "698252002": "NSIVCB",
+    "427172004": "PVC",
+    "17338001": "PVC",
+    "164947007": "LPR",
+    "111975006": "LQT",
+    "164917005": "QAb",
+    "47665007": "RAD",
+    "59118001": "RBBB",
+    "63593006": "SVPB",
+    "164934002": "TAb",
+    "59931005": "TInv",
+    "17338001": "VPB",
 }
 
 # Load challenge data.
@@ -124,6 +124,7 @@ def parse_arg():
     parser.add_argument('--data_path', type=str, default='dataset/cinc2020/raw')
     parser.add_argument('--out_dir', type=str, default='dataset/cinc2020/processed')
     parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--mode', type=str, default='signal')
     args = parser.parse_args()
     return args
 
@@ -140,7 +141,7 @@ def process_image(in_fp, out_fp):
     poincare(nnis, fp=out_fp)
 
 
-def process_cinc2020(args):
+def process_cinc2020_poincare_diagram(args):
     os.makedirs(args.out_dir, exist_ok=True)
     header_files = glob.glob(
         os.path.join(args.data_path, 'training/**/*.hea'),
@@ -179,7 +180,13 @@ def process_cinc2020(args):
     val_df.to_csv(os.path.join(args.out_dir, 'y_val.csv'), index_label='idx')
     test_df.to_csv(os.path.join(args.out_dir, 'y_test.csv'), index_label='idx')
 
+def process_cinc2020_timeseries(args):
+    NotImplemented
+
 
 if __name__ == '__main__':
     args = parse_arg()
-    process_cinc2020(args)
+    if args.mode == 'poincare':
+        process_cinc2020_poincare_diagram(args)
+    elif args.mode == 'timeseries':
+        process_cinc2020_timeseries(args)

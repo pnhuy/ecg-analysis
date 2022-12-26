@@ -8,9 +8,9 @@ from pytorch_grad_cam import GradCAM, HiResCAM, ScoreCAM, GradCAMPlusPlus, Ablat
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 from pytorch_grad_cam.utils.image import show_cam_on_image
 
-from data.images import PtbXlDataModule
-from models.images import ImageClassifier
-from train import set_seed
+from data.images.images import PtbXlDataModule
+from models.images.images import ImageClassifier
+from train_poincare import set_seed
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 

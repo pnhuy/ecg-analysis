@@ -8,12 +8,20 @@ Install the requirements:
 
 Train: 
 
-`python train.py --data_path dataset/cinc2017 --batch_size 32 --max_epochs 100 --model_barebone resnet50`
+`python train_poincare.py --data_path dataset/cinc2017 --batch_size 32 --max_epochs 100 --model_barebone resnet50`
+
+or:
+
+`python train_resnet1d.py`
+
+or:
+
+`python train_cnn1d.py`
 
 Run the tensorboard:
 
 `tensorboard --bind_all --logdir logs`
 
-Generate the explain: 
+Generate the explain:
 
 `python explain.py --data_path dataset/cinc2017 --ckpt_path logs/ckpt/epoch=19-val_loss=0.41-val_f1=0.79.ckpt`

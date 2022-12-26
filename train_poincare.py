@@ -4,8 +4,8 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 
-from data.images import PtbXlDataModule
-from models.images import ImageClassifier
+from data.images.images import PtbXlDataModule
+from models.images.images import ImageClassifier
 import os
 
 

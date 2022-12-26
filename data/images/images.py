@@ -9,7 +9,7 @@ from torchvision import transforms
 from scipy import io as sio
 import numpy as np
 
-from .utils import *
+from ..utils import *
 
 
 def read_mat(fp):
