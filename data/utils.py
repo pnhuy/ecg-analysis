@@ -9,6 +9,12 @@ from matplotlib import pyplot as plt
 from scipy import io as sio
 
 
+def set_seed(seed=0):
+    import numpy, torch, random
+    numpy.random.seed(seed)
+    torch.random.manual_seed(seed)
+    random.seed(seed)
+
 def load_mat(fp):
     sample = sio.loadmat(fp)['val']
     return sample

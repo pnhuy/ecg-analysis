@@ -21,285 +21,95 @@ from sklearn import metrics
 import pandas as pd
 from torchmetrics.classification import BinaryF1Score
 
-class MyDataset(Dataset):
-    def __init__(self, data, label):
-        self.data = data
-        self.label = label
+import warnings
+warnings.filterwarnings("ignore")
 
-    def __getitem__(self, index):
-        return (torch.tensor(self.data[index], dtype=torch.float), torch.tensor(self.label[index], dtype=torch.long))
 
-    def __len__(self):
-        return len(self.data)
-    
-class MyConv1dPadSame(nn.Module):
-    """
-    extend nn.Conv1d to support SAME padding
-    """
-    def __init__(self, in_channels, out_channels, kernel_size, stride, groups=1):
-        super(MyConv1dPadSame, self).__init__()
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.kernel_size = kernel_size
-        self.stride = stride
-        self.groups = groups
-        self.conv = torch.nn.Conv1d(
-            in_channels=self.in_channels, 
-            out_channels=self.out_channels, 
-            kernel_size=self.kernel_size, 
-            stride=self.stride, 
-            groups=self.groups)
+class BasicBlock1d(nn.Module):
+    expansion = 1
 
-    def forward(self, x):
-        
-        net = x
-        
-        # compute pad shape
-        in_dim = net.shape[-1]
-        out_dim = (in_dim + self.stride - 1) // self.stride
-        p = max(0, (out_dim - 1) * self.stride + self.kernel_size - in_dim)
-        pad_left = p // 2
-        pad_right = p - pad_left
-        net = F.pad(net, (pad_left, pad_right), "constant", 0)
-        
-        net = self.conv(net)
-
-        return net
-        
-class MyMaxPool1dPadSame(nn.Module):
-    """
-    extend nn.MaxPool1d to support SAME padding
-    """
-    def __init__(self, kernel_size):
-        super(MyMaxPool1dPadSame, self).__init__()
-        self.kernel_size = kernel_size
-        self.stride = 1
-        self.max_pool = torch.nn.MaxPool1d(kernel_size=self.kernel_size)
-
-    def forward(self, x):
-        
-        net = x
-        
-        # compute pad shape
-        in_dim = net.shape[-1]
-        out_dim = (in_dim + self.stride - 1) // self.stride
-        p = max(0, (out_dim - 1) * self.stride + self.kernel_size - in_dim)
-        pad_left = p // 2
-        pad_right = p - pad_left
-        net = F.pad(net, (pad_left, pad_right), "constant", 0)
-        
-        net = self.max_pool(net)
-        
-        return net
-    
-class BasicBlock(nn.Module):
-    """
-    ResNet Basic Block
-    """
-    def __init__(self, in_channels, out_channels, kernel_size, stride, groups, downsample, use_bn, use_do, is_first_block=False):
-        super(BasicBlock, self).__init__()
-        
-        self.in_channels = in_channels
-        self.kernel_size = kernel_size
-        self.out_channels = out_channels
-        self.stride = stride
-        self.groups = groups
+    def __init__(self, inplanes, planes, stride=1, downsample=None):
+        super(BasicBlock1d, self).__init__()
+        self.conv1 = nn.Conv1d(inplanes, planes, kernel_size=7, stride=stride, padding=3, bias=False)
+        self.bn1 = nn.BatchNorm1d(planes)
+        self.relu = nn.ReLU(inplace=True)
+        self.dropout = nn.Dropout(p=0.2)
+        self.conv2 = nn.Conv1d(planes, planes, kernel_size=7, stride=1, padding=3, bias=False)
+        self.bn2 = nn.BatchNorm1d(planes)
         self.downsample = downsample
-        if self.downsample:
-            self.stride = stride
-        else:
-            self.stride = 1
-        self.is_first_block = is_first_block
-        self.use_bn = use_bn
-        self.use_do = use_do
-
-        # the first conv
-        self.bn1 = nn.BatchNorm1d(in_channels)
-        self.relu1 = nn.ReLU()
-        self.do1 = nn.Dropout(p=0.5)
-        self.conv1 = MyConv1dPadSame(
-            in_channels=in_channels, 
-            out_channels=out_channels, 
-            kernel_size=kernel_size, 
-            stride=self.stride,
-            groups=self.groups)
-
-        # the second conv
-        self.bn2 = nn.BatchNorm1d(out_channels)
-        self.relu2 = nn.ReLU()
-        self.do2 = nn.Dropout(p=0.5)
-        self.conv2 = MyConv1dPadSame(
-            in_channels=out_channels, 
-            out_channels=out_channels, 
-            kernel_size=kernel_size, 
-            stride=1,
-            groups=self.groups)
-                
-        self.max_pool = MyMaxPool1dPadSame(kernel_size=self.stride)
-
+    
     def forward(self, x):
-        
-        identity = x
-        
-        # the first conv
-        out = x
-        if not self.is_first_block:
-            if self.use_bn:
-                out = self.bn1(out)
-            out = self.relu1(out)
-            if self.use_do:
-                out = self.do1(out)
-        out = self.conv1(out)
-        
-        # the second conv
-        if self.use_bn:
-            out = self.bn2(out)
-        out = self.relu2(out)
-        if self.use_do:
-            out = self.do2(out)
+        residual = x
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+        out = self.dropout(out)
         out = self.conv2(out)
-        
-        # if downsample, also downsample identity
-        if self.downsample:
-            identity = self.max_pool(identity)
-            
-        # if expand channel, also pad zeros to identity
-        if self.out_channels != self.in_channels:
-            identity = identity.transpose(-1,-2)
-            ch1 = (self.out_channels-self.in_channels)//2
-            ch2 = self.out_channels-self.in_channels-ch1
-            identity = F.pad(identity, (ch1, ch2), "constant", 0)
-            identity = identity.transpose(-1,-2)
-        
-        # shortcut
-        out += identity
-
+        out = self.bn2(out)
+        if self.downsample is not None:
+            residual = self.downsample(x)
+        out += residual
+        out = self.relu(out)
         return out
+
+
+class ResNet1d(nn.Module):
+    def __init__(self, block, layers, input_channels=12, inplanes=64, num_classes=9):
+        super(ResNet1d, self).__init__()
+        self.inplanes = inplanes
+        self.conv1 = nn.Conv1d(input_channels, self.inplanes, kernel_size=15, stride=2, padding=7, bias=False)
+        self.bn1 = nn.BatchNorm1d(inplanes)
+        self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool1d(kernel_size=3, stride=2, padding=1)
+        self.layer1 = self._make_layer(BasicBlock1d, 64, layers[0])
+        self.layer2 = self._make_layer(BasicBlock1d, 128, layers[1], stride=2)
+        self.layer3 = self._make_layer(BasicBlock1d, 128, layers[2], stride=2)
+        self.layer4 = self._make_layer(BasicBlock1d, 256, layers[3], stride=2)
+        self.adaptiveavgpool = nn.AdaptiveAvgPool1d(1)
+        self.adaptivemaxpool = nn.AdaptiveMaxPool1d(1)
+        self.fc = nn.Linear(256 * block.expansion * 2, num_classes)
+        self.dropout = nn.Dropout(0.2)
     
-class ResNet1D(nn.Module):
-    """
-    
-    Input:
-        X: (n_samples, n_channel, n_length)
-        Y: (n_samples)
-        
-    Output:
-        out: (n_samples)
-        
-    Pararmetes:
-        in_channels: dim of input, the same as n_channel
-        base_filters: number of filters in the first several Conv layer, it will double at every 4 layers
-        kernel_size: width of kernel
-        stride: stride of kernel moving
-        groups: set larget to 1 as ResNeXt
-        n_block: number of blocks
-        n_classes: number of classes
-        
-    """
+    def _make_layer(self, block, planes, blocks, stride=1):
+        downsample = None
+        if stride != 1 or self.inplanes != planes * block.expansion:
+            downsample = nn.Sequential(
+                nn.Conv1d(self.inplanes, planes * block.expansion,
+                          kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm1d(planes * block.expansion),
+            )
 
-    def __init__(self, in_channels, base_filters, kernel_size, stride, groups, n_block, n_classes, downsample_gap=2, increasefilter_gap=4, use_bn=True, use_do=True, verbose=False):
-        super(ResNet1D, self).__init__()
-        
-        self.verbose = verbose
-        self.n_block = n_block
-        self.kernel_size = kernel_size
-        self.stride = stride
-        self.groups = groups
-        self.use_bn = use_bn
-        self.use_do = use_do
+        layers = []
+        layers.append(block(self.inplanes, planes, stride, downsample))
+        self.inplanes = planes * block.expansion
+        for _ in range(1, blocks):
+            layers.append(block(self.inplanes, planes))
+        return nn.Sequential(*layers)
 
-        self.downsample_gap = downsample_gap # 2 for base model
-        self.increasefilter_gap = increasefilter_gap # 4 for base model
-
-        # first block
-        self.first_block_conv = MyConv1dPadSame(in_channels=in_channels, out_channels=base_filters, kernel_size=self.kernel_size, stride=1)
-        self.first_block_bn = nn.BatchNorm1d(base_filters)
-        self.first_block_relu = nn.ReLU()
-        out_channels = base_filters
-                
-        # residual blocks
-        self.basicblock_list = nn.ModuleList()
-        for i_block in range(self.n_block):
-            # is_first_block
-            if i_block == 0:
-                is_first_block = True
-            else:
-                is_first_block = False
-            # downsample at every self.downsample_gap blocks
-            if i_block % self.downsample_gap == 1:
-                downsample = True
-            else:
-                downsample = False
-            # in_channels and out_channels
-            if is_first_block:
-                in_channels = base_filters
-                out_channels = in_channels
-            else:
-                # increase filters at every self.increasefilter_gap blocks
-                in_channels = int(base_filters*2**((i_block-1)//self.increasefilter_gap))
-                if (i_block % self.increasefilter_gap == 0) and (i_block != 0):
-                    out_channels = in_channels * 2
-                else:
-                    out_channels = in_channels
-            
-            tmp_block = BasicBlock(
-                in_channels=in_channels, 
-                out_channels=out_channels, 
-                kernel_size=self.kernel_size, 
-                stride = self.stride, 
-                groups = self.groups, 
-                downsample=downsample, 
-                use_bn = self.use_bn, 
-                use_do = self.use_do, 
-                is_first_block=is_first_block)
-            self.basicblock_list.append(tmp_block)
-
-        # final prediction
-        self.final_bn = nn.BatchNorm1d(out_channels)
-        self.final_relu = nn.ReLU(inplace=True)
-        # self.do = nn.Dropout(p=0.5)
-        self.dense = nn.Linear(out_channels, n_classes)
-        # self.softmax = nn.Softmax(dim=1)
-        
     def forward(self, x):
-        
-        out = x
-        
-        # first conv
-        if self.verbose:
-            print('input shape', out.shape)
-        out = self.first_block_conv(out)
-        if self.verbose:
-            print('after first conv', out.shape)
-        if self.use_bn:
-            out = self.first_block_bn(out)
-        out = self.first_block_relu(out)
-        
-        # residual blocks, every block has two conv
-        for i_block in range(self.n_block):
-            net = self.basicblock_list[i_block]
-            if self.verbose:
-                print('i_block: {0}, in_channels: {1}, out_channels: {2}, downsample: {3}'.format(i_block, net.in_channels, net.out_channels, net.downsample))
-            out = net(out)
-            if self.verbose:
-                print(out.shape)
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+        x1 = self.adaptiveavgpool(x)
+        x2 = self.adaptivemaxpool(x)
+        x = torch.cat((x1, x2), dim=1)
+        x = x.view(x.size(0), -1)
+        return self.fc(x)
 
-        # final prediction
-        if self.use_bn:
-            out = self.final_bn(out)
-        out = self.final_relu(out)
-        out = out.mean(-1)
-        if self.verbose:
-            print('final pooling', out.shape)
-        # out = self.do(out)
-        out = self.dense(out)
-        if self.verbose:
-            print('dense', out.shape)
-        # out = self.softmax(out)
-        if self.verbose:
-            print('softmax', out.shape)
-        
-        return out
+
+def resnet18(**kwargs):
+    model = ResNet1d(BasicBlock1d, [2, 2, 2, 2], **kwargs)
+    return model
+
+
+def resnet34(**kwargs):
+    model = ResNet1d(BasicBlock1d, [3, 4, 6, 3], **kwargs)
+    return model
 
 
 class ResNet1DLightningModule(pl.LightningModule):
@@ -309,20 +119,22 @@ class ResNet1DLightningModule(pl.LightningModule):
         self.class_weights = torch.tensor(class_weights, dtype=torch.float)
         self.learning_rate = learning_rate
         
-        self.model = ResNet1D(
-            in_channels=1,
-            base_filters=64,
-            kernel_size=16,
-            stride=2,
-            groups=16,
-            n_block=8,
-            n_classes=len(classes),
-            downsample_gap=2,
-            increasefilter_gap=4,
-            use_bn=True,
-            use_do=True,
-            verbose=False
-        )
+        self.model = resnet18(input_channels=1, inplanes=64, num_classes=len(classes))
+        # self.model = ResNet1d(n_feature_maps=64, n_classes=len(classes))
+        # self.model = ResNet1D(
+        #     in_channels=1,
+        #     base_filters=256,
+        #     kernel_size=5,
+        #     stride=1,
+        #     groups=1,
+        #     n_block=10,
+        #     n_classes=len(classes),
+        #     downsample_gap=2,
+        #     increasefilter_gap=4,
+        #     use_bn=True,
+        #     use_do=True,
+        #     verbose=False
+        # )
         # self.model = ResNet1D(
         #     in_channels=1,
         #     base_filters=64,
@@ -337,6 +149,7 @@ class ResNet1DLightningModule(pl.LightningModule):
         # )
 
         self.loss_fn = nn.BCEWithLogitsLoss(weight=self.class_weights)
+        # self.loss_fn = nn.CrossEntropyLoss()
         # self.loss_fn = WeightedMultilabel(weights=self.class_weights)
 
         # Config metrics
@@ -347,8 +160,8 @@ class ResNet1DLightningModule(pl.LightningModule):
         }
 
     def configure_optimizers(self):
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        self.scheduler_lr = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', factor=0.1, patience=10)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=1e-5)
+        self.scheduler_lr = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', factor=0.5, patience=10)
         return {
             "optimizer": self.optimizer,
             "lr_scheduler": {
@@ -368,6 +181,8 @@ class ResNet1DLightningModule(pl.LightningModule):
         logits = self.forward(data)
         probs = torch.sigmoid(logits)
         loss = self.loss_fn(logits, label)
+        # probs = torch.softmax(logits, dim=1)
+        # loss = self.loss_fn(probs, label)
         f1.update(probs, label)
 
         self.log(f'{stage}_loss', loss, prog_bar=True, logger=True, on_step=False, on_epoch=True, batch_size=data.shape[0])
@@ -388,7 +203,10 @@ class ResNet1DLightningModule(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         return self._step(batch, batch_idx, stage='val')
     
-    def validation_epoch_end(self, outputs):
+    def test_step(self, batch, batch_idx):
+        return self._step(batch, batch_idx, stage='test')
+    
+    def _epoch_end(self, outputs, stage='val'):
         logger = self.logger.experiment
 
         all_probs = np.concatenate([i['probs'] for i in outputs])
@@ -399,9 +217,18 @@ class ResNet1DLightningModule(pl.LightningModule):
         report = metrics.classification_report(all_labels, all_preds, 
             target_names=self.classes, zero_division=0, output_dict=True)
         report = pd.DataFrame(report).round(2).T.to_markdown()
-        logger.add_text('val_clf_report', report, self.current_epoch)
+        logger.add_text(f'{stage}_clf_report', report, self.current_epoch)
 
-        return super().validation_epoch_end(outputs)
+        if stage == 'val':
+            return super().validation_epoch_end(outputs)
+        elif stage == 'test':
+            return super().test_epoch_end(outputs)
+
+    def validation_epoch_end(self, outputs):
+        return self._epoch_end(outputs, stage='val')
+    
+    def test_epoch_end(self, outputs):
+        return self._epoch_end(outputs, stage='test')
 
     def _on_epoch_end(self, stage='train'):
         f1 = self.f1[stage]

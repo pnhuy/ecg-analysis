@@ -12,6 +12,8 @@ import numpy as np
 from ..utils import *
 
 
+pl.seed_everything(42, workers=True)
+
 def read_mat(fp):
     x = sio.loadmat(fp)
     data = np.asarray(x['val'], dtype=np.float64)
@@ -35,6 +37,7 @@ class PtbXlDataset:
         self.transform = transform
         self.labels = pd.read_csv(labels_file, index_col='idx')
         self.classes = self.labels.columns.tolist()
+        pl.seed_everything(42, workers=True)
 
     def __len__(self):
         return len(self.labels)
@@ -149,6 +152,7 @@ class PtbXlDataModule(pl.LightningDataModule):
         self.val_label = val_label
         self.test_dir = test_dir
         self.test_label = test_label
+        pl.seed_everything(42, workers=True)
         
         self.train_tf = transforms.Compose([
             transforms.ToTensor(),

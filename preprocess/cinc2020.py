@@ -181,7 +181,22 @@ def process_cinc2020_poincare_diagram(args):
     test_df.to_csv(os.path.join(args.out_dir, 'y_test.csv'), index_label='idx')
 
 def process_cinc2020_timeseries(args):
-    NotImplemented
+    train_df = pd.read_csv(os.path.join(args.out_dir, 'y_train.csv'))
+    val_df = pd.read_csv(os.path.join(args.out_dir, 'y_val.csv'))
+    test_df = pd.read_csv(os.path.join(args.out_dir, 'y_test.csv'))
+
+    train_files = [os.path.join(args.data_path, i) for i in train_df['idx'].to_list()]
+    val_files = [os.path.join(args.data_path, i) for i in val_df['idx'].to_list()]
+    test_files = [os.path.join(args.data_path, i) for i in test_df['idx'].to_list()]
+
+    train_features = extract_ts_features(train_files, verbose=True)
+    train_features.to_csv(os.path.join(args.out_dir, 'train_features.csv'), index=False)
+
+    val_features = extract_ts_features(val_files, verbose=True)
+    val_features.to_csv(os.path.join(args.out_dir, 'val_features.csv'), index=False)
+
+    test_features = extract_ts_features(test_files, verbose=True)
+    test_features.to_csv(os.path.join(args.out_dir, 'test_features.csv'), index=False)
 
 
 if __name__ == '__main__':

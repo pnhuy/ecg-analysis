@@ -20,9 +20,10 @@ def set_seed(seed=0):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_path', type=str, default='/home/huypham/Projects/ecg/dataset/cinc2020/raw')
+    parser.add_argument('--csv_path', type=str, default='/home/huypham/Projects/ecg/dataset/cinc2020/processed')
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--learning_rate', type=float, default=1e-4)
-    parser.add_argument('--max_epochs', type=int, default=100)
+    parser.add_argument('--max_epochs', type=int, default=500)
     parser.add_argument('--log_dir', type=str, default='./logs/resnet1d')
     parser.add_argument('--resume_from_checkpoint', type=str, default=None)
     parser.add_argument('--seed', type=int, default=42)
@@ -33,21 +34,27 @@ def train(args=None):
     set_seed(args.seed)
     train_dir = args.data_path
     val_dir = train_dir
+    test_dir = train_dir
 
-    train_label = '/home/huypham/Projects/ecg/dataset/cinc2020/processed/y_train.csv'
-    val_label = '/home/huypham/Projects/ecg/dataset/cinc2020/processed/y_val.csv'
+    train_label = os.path.join(args.csv_path, 'y_train.csv') # '/home/huypham/Projects/ecg/dataset/cinc2020/processed/y_train.csv'
+    val_label = os.path.join(args.csv_path, 'y_val.csv')
+    test_label = os.path.join(args.csv_path, 'y_test.csv')
 
     data_module = TimeSeriesDataModule(
         train_dir=train_dir,
         train_label=train_label,
         val_dir=val_dir,
         val_label=val_label,
+        test_dir=test_dir,
+        test_label=test_label,
         batch_size=args.batch_size
     )
 
     train_dataloader = data_module.train_dataloader()
     classes = data_module.train_dataset.classes
     class_weights = data_module.train_dataset.class_weights
+
+    # import ipdb; ipdb.set_trace()
 
     data = next(iter(train_dataloader))
     print(data['data'].shape)
@@ -66,7 +73,7 @@ def train(args=None):
     checkpoint = ModelCheckpoint(
         dirpath=os.path.join(args.log_dir, 'ckpt'),
         mode='min',
-        monitor='val_loss',
+        monitor='val_f1',
         filename='{epoch}-{val_loss:.2f}-{val_f1:.2f}',
         save_last=True,
         save_top_k=-1,
@@ -89,6 +96,8 @@ def train(args=None):
     )
 
     trainer.fit(model, data_module)
+    
+    trainer.test(model, data_module, ckpt_path=best_ckpt.best_model_path)
 
 
 if __name__ == '__main__':

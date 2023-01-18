@@ -31,7 +31,8 @@ def parse_args():
 
 
 def train(args):
-    set_seed(seed=args.seed)
+    # set_seed(seed=args.seed)
+    pl.seed_everything(args.seed, workers=True)
 
     train_dir = os.path.join(args.data_path, 'processed')
     train_label = os.path.join(args.data_path, 'processed/y_train.csv')
@@ -47,8 +48,8 @@ def train(args):
         train_label=train_label,
         val_dir=val_dir,
         val_label=val_label,
-        # test_dir=test_dir,
-        # test_label=test_label,
+        test_dir=test_dir,
+        test_label=test_label,
         batch_size=args.batch_size
     )
 
@@ -62,7 +63,7 @@ def train(args):
     )
 
     checkpoint = ModelCheckpoint(
-        dirpath=os.path.join(args.log_dir, 'ckpt'),
+        dirpath=os.path.join(logger.log_dir, 'ckpt'),
         mode='min',
         monitor='val_loss',
         filename='{epoch}-{val_loss:.2f}-{val_f1:.2f}',
@@ -72,7 +73,7 @@ def train(args):
     )
 
     best_ckpt = ModelCheckpoint(
-        dirpath=os.path.join(args.log_dir, 'ckpt'),
+        dirpath=os.path.join(logger.log_dir, 'ckpt'),
         mode='min',
         monitor='val_loss',
         filename='best-{epoch}-{val_loss:.2f}-{val_f1:.2f}',
@@ -82,7 +83,8 @@ def train(args):
         accelerator='gpu',
         max_epochs=args.max_epochs,
         logger=logger,
-        callbacks=[checkpoint, best_ckpt]
+        callbacks=[checkpoint, best_ckpt],
+        deterministic=False,
     )
 
     trainer.fit(
@@ -91,6 +93,11 @@ def train(args):
         ckpt_path=args.resume_from_checkpoint
     )
 
+    trainer.test(
+        model=model,
+        datamodule=datamodule,
+        ckpt_path=best_ckpt.best_model_path,
+    )
 
 if __name__ == '__main__':
     args = parse_args()

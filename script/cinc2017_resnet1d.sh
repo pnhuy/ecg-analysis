@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=0 python train_resnet1d.py --log_dir logs_cinc2020/resnet1d --max_epoch 100 --csv_path dataset/cinc2020/processed --data_path dataset/cinc2020/raw/

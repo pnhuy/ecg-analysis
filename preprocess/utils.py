@@ -3,10 +3,55 @@ import io
 
 import biosppy
 import numpy as np
+import pandas as pd
 import PIL
 import pyhrv
 from matplotlib import pyplot as plt
 from scipy import io as sio
+from tqdm.auto import tqdm
+import wfdb
+from tsfresh.feature_extraction import ComprehensiveFCParameters, EfficientFCParameters, MinimalFCParameters
+from tsfresh.feature_extraction.extraction import extract_features
+
+EXCLUDING_SETTINGS = ['approximate_entropy', 'sample_entropy', 'matrix_profile', 'number_cwt_peaks',
+                      'partial_autocorrelation', 'agg_linear_trend', 'augmented_dickey_fuller']
+
+
+def _read_data(fp):
+    fp = fp.replace('.hea', '').replace('.mat', '')
+    signals, fields = wfdb.rdsamp(fp, channels=[0])
+
+    signal = signals[:, 0]
+    signal = np.nan_to_num(signal)
+    return signal, fields
+
+def _signal_to_dataframe(signal, id):
+    n = len(signal)
+    ids = [id] * n
+    time = np.arange(n)
+    df = pd.DataFrame(dict(id=ids, time=time, x=signal))
+    return df
+
+def extract_ts_features(file_names, settings=EfficientFCParameters(), verbose=False):
+    dfs = []
+    settings = {k:v for k, v in settings.items() if k not in EXCLUDING_SETTINGS}
+    pbar = tqdm(file_names, disable=(not verbose))
+    for fp in pbar:
+        pbar.set_postfix_str(fp)
+        signal, fileds = _read_data(fp)
+        signal_df = _signal_to_dataframe(signal, fp)
+
+        ft_df = extract_features(
+            signal_df,
+            default_fc_parameters=settings,
+            column_id='id',
+            disable_progressbar=True,
+            n_jobs=8
+        )
+
+        dfs.append(ft_df)
+    dfs = pd.concat(dfs, axis=0, ignore_index=True)
+    return dfs
 
 
 def load_mat(fp):

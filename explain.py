@@ -16,9 +16,9 @@ DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, required=True)
+    parser.add_argument('--data_path', type=str, default='dataset/cinc2017')
     parser.add_argument('--batch_size', type=int, default=64)
-    parser.add_argument('--log_dir', type=str, default='./logs')
+    parser.add_argument('--log_dir', type=str, default='./logs_cinc2017/gradcam')
     parser.add_argument('--ckpt_path', type=str, required=True)
     parser.add_argument('--seed', type=int, default=42)
     args = parser.parse_args()
@@ -27,18 +27,20 @@ def parse_args():
 def main(args):
     set_seed(seed=args.seed)
 
-    train_dir = os.path.join(args.data_path, 'processed/train')
+    train_dir = os.path.join(args.data_path, 'processed')
     train_label = os.path.join(args.data_path, 'processed/y_train.csv')
-    val_dir = os.path.join(args.data_path, 'processed/val')
+    val_dir = os.path.join(args.data_path, 'processed')
     val_label = os.path.join(args.data_path, 'processed/y_val.csv')
+    test_dir = os.path.join(args.data_path, 'processed')
+    test_label = os.path.join(args.data_path, 'processed/y_test.csv')
 
     datamodule = PtbXlDataModule(
         train_dir=train_dir,
         train_label=train_label,
         val_dir=val_dir,
         val_label=val_label,
-        # test_dir=test_dir,
-        # test_label=test_label,
+        test_dir=test_dir,
+        test_label=test_label,
         batch_size=args.batch_size
     )
 
@@ -49,12 +51,15 @@ def main(args):
     saved_model = ImageClassifier.load_from_checkpoint(
         args.ckpt_path,
         classes=classes,
-        barebone='resnet50', # 'vit_b_16'
+        barebone='densenet121', # 'vit_b_16'
         learning_rate=5e-4,
         loss_type='bce')
 
     model = saved_model.network.to(DEVICE)
-    target_layers = [model.layer4[-1]]
+    if saved_model.barebone.startswith('resnet'):
+        target_layers = [model.layer4[-1]]
+    elif saved_model.barebone.startswith('densenet'):
+        target_layers = [model.features[-1]]
     
 
     # Get Prediction
@@ -84,7 +89,7 @@ def main(args):
     with open(os.path.join(args.log_dir, 'cam_output', 'predictions.json'), 'w') as f:
         json.dump(predictions, f)
 
-    for CAM in (GradCAM, HiResCAM, ScoreCAM, GradCAMPlusPlus, AblationCAM, XGradCAM, EigenCAM, FullGrad):
+    for CAM in (GradCAM, AblationCAM):
         output_dir = os.path.join(args.log_dir, 'cam_output', CAM.__name__)
         os.makedirs(output_dir, exist_ok=True)
         cam = CAM(model=model, target_layers=target_layers, use_cuda=True)
@@ -106,7 +111,7 @@ def main(args):
                 plt.imshow(visualization)
                 plt.axis('off')
                 plt.title(f"Label: {preds['label']} - Pred: {preds['pred']} - Prob = {preds['prob']:.2f}")
-                plt.savefig(fp)
+                plt.savefig(fp, bbox_inches='tight')
 
 
 if __name__ == '__main__':

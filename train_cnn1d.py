@@ -20,11 +20,12 @@ def set_seed(seed=0):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_path', type=str, default='/home/huypham/Projects/ecg/dataset/cinc2020/raw')
+    parser.add_argument('--csv_path', type=str, default='/home/huypham/Projects/ecg/dataset/cinc2020/processed')
     parser.add_argument('--batch_size', type=int, default=32)
-    parser.add_argument('--model_barebone', type=str, default='resnet50')
+    # parser.add_argument('--model_barebone', type=str, default='resnet50')
     parser.add_argument('--learning_rate', type=float, default=1e-5)
     parser.add_argument('--max_epochs', type=int, default=100)
-    parser.add_argument('--log_dir', type=str, default='./logs/timeseries')
+    parser.add_argument('--log_dir', type=str, default='./logs/cnn1d')
     parser.add_argument('--resume_from_checkpoint', type=str, default=None)
     parser.add_argument('--seed', type=int, default=42)
     args = parser.parse_args()
@@ -34,15 +35,19 @@ def train(args=None):
     set_seed(args.seed)
     train_dir = args.data_path
     val_dir = train_dir
+    test_dir = train_dir
 
-    train_label = '/home/huypham/Projects/ecg/dataset/cinc2020/processed/y_train.csv'
-    val_label = '/home/huypham/Projects/ecg/dataset/cinc2020/processed/y_val.csv'
+    train_label = os.path.join(args.csv_path, 'y_train.csv') # '/home/huypham/Projects/ecg/dataset/cinc2020/processed/y_train.csv'
+    val_label = os.path.join(args.csv_path, 'y_val.csv')
+    test_label = os.path.join(args.csv_path, 'y_test.csv')
 
     data_module = TimeSeriesDataModule(
         train_dir=train_dir,
         train_label=train_label,
         val_dir=val_dir,
         val_label=val_label,
+        test_dir=test_dir,
+        test_label=test_label,
         batch_size=args.batch_size
     )
 
@@ -84,6 +89,8 @@ def train(args=None):
     )
 
     trainer.fit(model, data_module)
+
+    trainer.test(model, data_module, ckpt_path=best_ckpt.best_model_path)
 
 
 if __name__ == '__main__':
