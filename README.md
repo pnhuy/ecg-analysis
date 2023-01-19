@@ -1,27 +1,11 @@
 # ECG Analysis
 
-Download & Unzip the processed data: `https://drive.google.com/file/d/1Vn0i9eHE0tAGllFeW45jsidczTn7HJ1z/view?usp=sharing`
+Download & Unzip the processed data: `https://drive.google.com/file/d/1_v1BfrrNXQ37YWeTvEvEDfm3xf1Z9wMj/view?usp=share_link`
 
-Install the requirements: 
+Install the requirements:  `pip install -r requirements.txt`
 
-`pip install -r requirements.txt`
+Train: run the `sh` file in folder `script`
 
-Train: 
+Run the tensorboard: `tensorboard --bind_all --logdir logs`
 
-`python train_poincare.py --data_path dataset/cinc2017 --batch_size 32 --max_epochs 100 --model_barebone resnet50`
-
-or:
-
-`python train_resnet1d.py`
-
-or:
-
-`python train_cnn1d.py`
-
-Run the tensorboard:
-
-`tensorboard --bind_all --logdir logs`
-
-Generate the explain:
-
-`python explain.py --data_path dataset/cinc2017 --ckpt_path logs/ckpt/epoch=19-val_loss=0.41-val_f1=0.79.ckpt`
+The log of all experiment: `https://drive.google.com/file/d/1wedpObNUjeNkUKxAAgu1y3j7Nr8YiRsr/view?usp=sharing`
