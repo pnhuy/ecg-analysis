@@ -64,7 +64,7 @@ def train(args=None):
     logger = TensorBoardLogger(args.log_dir)
 
     checkpoint = ModelCheckpoint(
-        dirpath=os.path.join(args.log_dir, 'ckpt'),
+        dirpath=os.path.join(logger.log_dir, 'ckpt'),
         mode='min',
         monitor='val_loss',
         filename='{epoch}-{val_loss:.2f}-{val_f1:.2f}',
@@ -74,7 +74,7 @@ def train(args=None):
     )
 
     best_ckpt = ModelCheckpoint(
-        dirpath=os.path.join(args.log_dir, 'ckpt'),
+        dirpath=os.path.join(logger.log_dir, 'ckpt'),
         mode='min',
         monitor='val_loss',
         filename='best-{epoch}-{val_loss:.2f}-{val_f1:.2f}',

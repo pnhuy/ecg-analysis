@@ -10,12 +10,6 @@ from models.timeseries.resnet1d import ResNet1DLightningModule
 import warnings
 warnings.filterwarnings('ignore')
 
-def set_seed(seed=0):
-    import numpy, torch, random
-    numpy.random.seed(seed)
-    torch.random.manual_seed(seed)
-    random.seed(seed)
-
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -31,7 +25,7 @@ def parse_args():
     return args
 
 def train(args=None):
-    set_seed(args.seed)
+    pl.seed_everything(args.seed, workers=True)
     train_dir = args.data_path
     val_dir = train_dir
     test_dir = train_dir
@@ -71,7 +65,7 @@ def train(args=None):
     logger = TensorBoardLogger(args.log_dir)
 
     checkpoint = ModelCheckpoint(
-        dirpath=os.path.join(args.log_dir, 'ckpt'),
+        dirpath=os.path.join(logger.log_dir, 'ckpt'),
         mode='min',
         monitor='val_f1',
         filename='{epoch}-{val_loss:.2f}-{val_f1:.2f}',
@@ -81,7 +75,7 @@ def train(args=None):
     )
 
     best_ckpt = ModelCheckpoint(
-        dirpath=os.path.join(args.log_dir, 'ckpt'),
+        dirpath=os.path.join(logger.log_dir, 'ckpt'),
         mode='min',
         monitor='val_loss',
         filename='best-{epoch}-{val_loss:.2f}-{val_f1:.2f}',

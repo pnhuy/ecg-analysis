@@ -24,7 +24,7 @@ from models.utils import set_seed
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--features", type=str, default='ecg')
+    parser.add_argument("--features", type=str, default='tsfresh')
     parser.add_argument("--data_dir", type=str, default="dataset/cinc2020/raw/")
     parser.add_argument("--csv_dir", type=str, default="dataset/cinc2020/processed/")
     parser.add_argument("--log_dir", type=str, default="./logs/tabular/")
@@ -162,8 +162,11 @@ def train(args):
     print('Best params:', search.best_params_)
 
     y_pred = search.predict(X_test)
+    y_prob = search.predict_proba(X_test)
     report = classification_report(y_test, y_pred, target_names=target_names)
     print(report)
+
+    np.savez_compressed(os.path.join(args.log_dir, 'test_prob'), y_prob)
 
     # Save report csv
     report = classification_report(y_test, y_pred, 

@@ -1,8 +1,4 @@
-"""
-resnet for 1-d signal data, pytorch version
- 
-Shenda Hong, Oct 2019
-"""
+import os
 
 import numpy as np
 from collections import Counter
@@ -118,6 +114,7 @@ class ResNet1DLightningModule(pl.LightningModule):
         self.classes = classes
         self.class_weights = torch.tensor(class_weights, dtype=torch.float)
         self.learning_rate = learning_rate
+        pl.seed_everything(42, workers=True)
         
         self.model = resnet18(input_channels=1, inplanes=64, num_classes=len(classes))
         # self.model = ResNet1d(n_feature_maps=64, n_classes=len(classes))
@@ -213,6 +210,8 @@ class ResNet1DLightningModule(pl.LightningModule):
         all_labels = np.concatenate([i['labels'] for i in outputs])
         all_preds = np.where(all_probs > 0.5, 1, 0)
 
+        np.savez_compressed(os.path.join(self.logger.log_dir, stage), all_probs)
+
         # Generate classification report and log to tensorboard
         report = metrics.classification_report(all_labels, all_preds, 
             target_names=self.classes, zero_division=0, output_dict=True)
@@ -229,6 +228,9 @@ class ResNet1DLightningModule(pl.LightningModule):
     
     def test_epoch_end(self, outputs):
         return self._epoch_end(outputs, stage='test')
+
+    def training_epoch_end(self, outputs):
+        return self._epoch_end(outputs, stage='train')
 
     def _on_epoch_end(self, stage='train'):
         f1 = self.f1[stage]

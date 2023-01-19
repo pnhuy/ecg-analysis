@@ -1,7 +1,7 @@
 """
 Pytorch Version of Ruhi solution of CinC 2017
 """
-
+import os
 import numpy as np
 from collections import Counter
 from matplotlib import pyplot as plt
@@ -113,7 +113,7 @@ class Net1DLightningModule(pl.LightningModule):
 
             nn.AvgPool1d(kernel_size=1, stride=2),
             nn.Flatten(),
-            nn.Linear(in_features=32, out_features=4)
+            nn.Linear(in_features=32, out_features=len(classes))
         )
 
         self.loss_fn = nn.BCEWithLogitsLoss(weight=self.class_weights)
@@ -179,6 +179,8 @@ class Net1DLightningModule(pl.LightningModule):
         all_labels = np.concatenate([i['labels'] for i in outputs])
         all_preds = np.where(all_probs > 0.5, 1, 0)
 
+        np.savez_compressed(os.path.join(self.logger.log_dir, stage), all_probs)
+
         # Generate classification report and log to tensorboard
         report = metrics.classification_report(all_labels, all_preds, 
             target_names=self.classes, zero_division=0, output_dict=True)
@@ -189,7 +191,12 @@ class Net1DLightningModule(pl.LightningModule):
             return super().validation_epoch_end(outputs)
         elif stage == 'test':
             return super().test_epoch_end(outputs)
+        elif stage == 'train':
+            return super().training_epoch_end(outputs)
 
+    def training_epoch_end(self, outputs):
+        return self._epoch_end(outputs, stage='train')
+    
     def validation_epoch_end(self, outputs):
         return self._epoch_end(outputs, stage='val')
     

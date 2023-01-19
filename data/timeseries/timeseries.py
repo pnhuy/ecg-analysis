@@ -15,6 +15,7 @@ class TimeSeriesDataset(Dataset):
         self.data_dir = data_dir
         self.csv_file = label_file
         self.max_len = max_len
+        pl.seed_everything(42, workers=True)
         
         self.prepare_data()
 
@@ -65,6 +66,8 @@ class TimeSeriesDataset(Dataset):
         mat = sio.loadmat(fp)
 
         header_fp = fp.replace('.mat', '.hea')
+        if not header_fp.endswith('.hea'):
+            header_fp += '.hea'
         with open(header_fp) as f:
             headers = f.readlines()
 
@@ -131,6 +134,7 @@ class TimeSeriesDataModule(pl.LightningDataModule):
         self.val_label = val_label
         self.test_dir = test_dir
         self.test_label = test_label
+        pl.seed_everything(42, workers=True)
 
         self.train_dataset = TimeSeriesDataset(train_dir, train_label, max_len=max_len)
         self.val_dataset = TimeSeriesDataset(val_dir, val_label, max_len=max_len)
