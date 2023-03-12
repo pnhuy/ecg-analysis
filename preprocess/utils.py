@@ -45,6 +45,7 @@ def extract_ts_features(file_names, settings=EfficientFCParameters(), verbose=Fa
             signal_df,
             default_fc_parameters=settings,
             column_id='id',
+            column_sort="time",
             disable_progressbar=True,
             n_jobs=8
         )

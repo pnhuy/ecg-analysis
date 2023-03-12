@@ -111,7 +111,7 @@ class TimeSeriesDataset(Dataset):
         X_train = torch.tensor(X_train, dtype=torch.float).reshape(1, -1)
 
 
-        return dict(data=X_train, label=label)
+        return dict(data=X_train, label=label, fp=fp)
 
 
     def __getitem__(self, index):

@@ -7,6 +7,8 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from data.images.images import PtbXlDataModule
 from models.images.images import ImageClassifier
 import os
+import eco2ai
+
 
 
 def set_seed(seed=0):
@@ -42,6 +44,10 @@ def train(args):
     test_label = os.path.join(args.data_path, 'processed/y_test.csv')
 
     logger = TensorBoardLogger(args.log_dir)
+
+    eco_tracker = eco2ai.Tracker(
+        file_name=os.path.join(logger.log_dir, "emission.csv")
+    )
     
     datamodule = PtbXlDataModule(
         train_dir=train_dir,
@@ -87,6 +93,8 @@ def train(args):
         deterministic=False,
     )
 
+    eco_tracker.start()
+
     trainer.fit(
         model=model,
         datamodule=datamodule,
@@ -98,6 +106,8 @@ def train(args):
         datamodule=datamodule,
         ckpt_path=best_ckpt.best_model_path,
     )
+
+    eco_tracker.stop()
 
 if __name__ == '__main__':
     args = parse_args()

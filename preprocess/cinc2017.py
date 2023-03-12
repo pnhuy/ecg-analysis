@@ -10,7 +10,7 @@ import pyhrv.tools as tools
 from scipy import io as sio
 from tqdm.auto import tqdm
 from sklearn.model_selection import train_test_split
-from utils import *
+from .utils import *
 
 
 # try:

@@ -89,7 +89,7 @@ def main(args):
     with open(os.path.join(args.log_dir, 'cam_output', 'predictions.json'), 'w') as f:
         json.dump(predictions, f)
 
-    for CAM in (GradCAM, AblationCAM):
+    for CAM in (GradCAM, ): # AblationCAM
         output_dir = os.path.join(args.log_dir, 'cam_output', CAM.__name__)
         os.makedirs(output_dir, exist_ok=True)
         cam = CAM(model=model, target_layers=target_layers, use_cuda=True)

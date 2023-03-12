@@ -16,6 +16,7 @@ from sklearn.metrics import classification_report
 from sklearn.impute import SimpleImputer, MissingIndicator
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import RFECV, VarianceThreshold
+import eco2ai
 
 
 from models.timeseries.tabular import PreProcessor
@@ -38,6 +39,10 @@ def parse_args():
 def train(args):
     set_seed(args.seed)
     os.makedirs(args.log_dir, exist_ok=True)
+
+    eco_tracker = eco2ai.Tracker(
+        file_name=os.path.join(args.log_dir, "emission.csv")
+    )
 
     if args.debug:
         args.cache = False
@@ -90,11 +95,16 @@ def train(args):
         X_val = pd.read_csv(os.path.join(args.csv_dir, 'val_features.csv'))
         X_test = pd.read_csv(os.path.join(args.csv_dir, 'test_features.csv'))
 
+        colnames = [i for i in X_train.columns if i.startswith('x__')]
+        X_train = X_train[colnames]
+        X_val = X_val[colnames]
+        X_test = X_test[colnames]
 
     X = np.vstack([X_train, X_val])
     y = np.vstack([y_train, y_val])
     test_fold = X_train.shape[0] * [-1] + X_val.shape[0] * [0]
     splitter = PredefinedSplit(test_fold)
+    print('Data shape:', X.shape, y.shape)
 
     preprocessor = Pipeline([
         ('scl', StandardScaler()),
@@ -158,6 +168,9 @@ def train(args):
         random_state=args.seed,
         n_iter=args.n_iter,
     )
+
+    eco_tracker.start()
+
     search.fit(X, y)
     print('Best params:', search.best_params_)
 
@@ -179,6 +192,8 @@ def train(args):
     cv_results = pd.DataFrame(search.cv_results_)
     cv_results.to_csv(os.path.join(args.log_dir, 'cv_results.csv'), index=False)
     joblib.dump(search, os.path.join(args.log_dir, 'search.pkl'))
+
+    eco_tracker.stop()
 
 
 if __name__ == "__main__":

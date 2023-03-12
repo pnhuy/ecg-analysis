@@ -3,6 +3,7 @@ import os
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
+import eco2ai
 
 from data.timeseries.timeseries import TimeSeriesDataModule
 from models.timeseries.cnn import Net1DLightningModule
@@ -63,6 +64,10 @@ def train(args=None):
 
     logger = TensorBoardLogger(args.log_dir)
 
+    eco_tracker = eco2ai.Tracker(
+        file_name=os.path.join(logger.log_dir, "emission.csv")
+    )
+
     checkpoint = ModelCheckpoint(
         dirpath=os.path.join(logger.log_dir, 'ckpt'),
         mode='min',
@@ -88,9 +93,13 @@ def train(args=None):
         precision=16
     )
 
+    eco_tracker.start()
+
     trainer.fit(model, data_module)
 
     trainer.test(model, data_module, ckpt_path=best_ckpt.best_model_path)
+
+    eco_tracker.stop()
 
 
 if __name__ == '__main__':
