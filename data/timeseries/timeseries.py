@@ -136,8 +136,10 @@ class TimeSeriesDataModule(pl.LightningDataModule):
         self.test_label = test_label
         pl.seed_everything(42, workers=True)
 
-        self.train_dataset = TimeSeriesDataset(train_dir, train_label, max_len=max_len)
-        self.val_dataset = TimeSeriesDataset(val_dir, val_label, max_len=max_len)
+        if train_label:
+            self.train_dataset = TimeSeriesDataset(train_dir, train_label, max_len=max_len)
+        if val_label:
+            self.val_dataset = TimeSeriesDataset(val_dir, val_label, max_len=max_len)
         if test_label:
             self.test_dataset = TimeSeriesDataset(test_dir, test_label, max_len=max_len)
 

@@ -184,4 +184,4 @@ class PtbXlDataModule(pl.LightningDataModule):
             return self.val_dataloader()
 
         self.test_dataset = PtbXlDataset(images_dir=self.test_dir, labels_file=self.test_label, transform=self.test_tf)
-        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=4, persistent_workers=True, shuffle=False)
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=1, persistent_workers=True, shuffle=False)
