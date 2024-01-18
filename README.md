@@ -97,8 +97,8 @@ Left side - models learned over CinC 2017 dataset; right side - models learned o
 
 ```
 @article{pham2023,
-	author={Pham, Huy and Egorov, Konstantin and Kazakov, Alexey and Budennyy, Semen},
-	title={Machine learning-based detection of cardiovascular disease using ECG signals: performance vs. complexity},
+    author={Pham, Huy and Egorov, Konstantin and Kazakov, Alexey and Budennyy, Semen},
+    title={Machine learning-based detection of cardiovascular disease using ECG signals: performance vs. complexity},
     journal={Frontiers in Cardiovascular Medicine},
     volume={10},
     year={2023},
