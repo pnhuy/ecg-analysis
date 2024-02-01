@@ -1,4 +1,4 @@
-# ECG Analysis
+# ECG Analysis: Machine Learning for Cardiovascular Disease Detection
 
 This repository is the official repository of the [paper](https://www.frontiersin.org/articles/10.3389/fcvm.2023.1229743/full):
 
@@ -11,29 +11,39 @@ This repository is the official repository of the [paper](https://www.frontiersi
 
 ## Abstract
 
-**Introduction:** Cardiovascular disease remains a significant problem in modern society. Among non-invasive techniques, the electrocardiogram (ECG) is one of the most reliable methods for detecting cardiac abnormalities. However, ECG interpretation requires expert knowledge and it is time-consuming. Developing a novel method to detect the disease early improves the quality and efficiency of medical care.
+**Introduction:**
 
-**Methods:** The paper presents various modern approaches for classifying cardiac diseases from ECG recordings. The first approach suggests the Poincaré representation of ECG signal and deep-learning-based image classifiers. Additionally, the raw signals were processed with the one-dimensional convolutional model while the XGBoost model was facilitated to predict based on the time-series features.
+Cardiovascular disease remains a significant problem in modern society. Among non-invasive techniques, the electrocardiogram (ECG) is one of the most reliable methods for detecting cardiac abnormalities. However, ECG interpretation requires expert knowledge and it is time-consuming. Developing a novel method to detect the disease early improves the quality and efficiency of medical care.
 
-**Results:** The Poincaré-based methods showed decent performance in predicting AF (atrial fibrillation) but not other types of arrhythmia. XGBoost model gave an acceptable performance in long-term data but had a long inference time due to highly-consuming calculations within the pre-processing phase. Finally, the 1D convolutional model, specifically the 1D ResNet, showed the best results in both studied CinC 2017 and CinC 2020 datasets, reaching the F1 score of 85% and 71%, respectively, and they were superior to the first-ranking solution of each challenge. The 1D models also presented high specificity. Additionally, our paper investigated efficiency metrics including power consumption and equivalent CO2 emissions, with one-dimensional models like 1D CNN and 1D ResNet being the most energy efficient. Model interpretation analysis showed that the DenseNet detected AF using heart rate variability while the 1D ResNet assessed the AF patterns in raw ECG signals.
+**Methods:** 
 
-**Discussion:** Despite the under-performed results, the Poincaré diagrams are still worth studying further because of the accessibility and inexpensive procedure. In the 1D convolutional models, the residual connections are useful to keep the model simple but not decrease the performance. Our approach in power measurement and model interpretation helped understand the numerical complexity and mechanism behind the model decision.
+The paper presents various modern approaches for classifying cardiac diseases from ECG recordings. The first approach suggests the Poincaré representation of ECG signal and deep-learning-based image classifiers. Additionally, the raw signals were processed with the one-dimensional convolutional model while the XGBoost model was facilitated to predict based on the time-series features.
+
+**Results:**
+- Poincaré-based methods excel in predicting atrial fibrillation (AF).
+- 1D ResNet outperforms other models, achieving an F1 score of 82% (CinC 2017) and 71% (CinC 2020).
+- Efficiency metrics, including power consumption and $CO_2$ emissions, highlight the energy efficiency of one-dimensional models like 1D CNN and 1D ResNet.
+- Model interpretation analysis reveals insights into AF detection using heart rate variability and raw ECG signals.
+
+**Discussion:**
+
+Despite the under-performed results, the Poincaré diagrams are still worth studying further because of the accessibility and inexpensive procedure. In the 1D convolutional models, the residual connections are useful to keep the model simple but not decrease the performance. Our approach in power measurement and model interpretation helped understand the numerical complexity and mechanism behind the model decision.
 
 ## Methods
 
 **Dataset**
 
-<img src='https://www.frontiersin.org/files/Articles/1229743/fcvm-10-1229743-HTML/image_m/fcvm-10-1229743-g001.jpg' width='50%'>
+<img src='https://www.frontiersin.org/files/Articles/1229743/fcvm-10-1229743-HTML/image_m/fcvm-10-1229743-g001.jpg' width='80%'>
 
 **Poincaré diagrams**
 
-<img src='https://www.frontiersin.org/files/Articles/1229743/fcvm-10-1229743-HTML/image_m/fcvm-10-1229743-g003.jpg' width='50%'>
+<img src='https://www.frontiersin.org/files/Articles/1229743/fcvm-10-1229743-HTML/image_m/fcvm-10-1229743-g003.jpg' width='80%'>
 
 The Poincaré diagrams of the short-term (A) and long-term (B) ECGs. The diagrams plot the normal R-peak intervals (or NN intervals).
 
 **Pipeline**
 
-<img src='https://www.frontiersin.org/files/Articles/1229743/fcvm-10-1229743-HTML/image_m/fcvm-10-1229743-g002.jpg' width='50%'>
+<img src='https://www.frontiersin.org/files/Articles/1229743/fcvm-10-1229743-HTML/image_m/fcvm-10-1229743-g002.jpg' width='80%'>
 
 ## Experiments
 
@@ -45,7 +55,6 @@ The Poincaré diagrams of the short-term (A) and long-term (B) ECGs. The diagram
 ## Results
 
 ### Classification performance
-
 
 | Dataset | Input Data | Model | F1 (5-fold CV) | SENS (5-fold CV) | SPEC (5-fold CV) | F1 (Test Set) | SENS (Test Set) | SPEC (Test Set) |
 |---|---|---|---|---|---|---|---|---|
@@ -89,13 +98,13 @@ The Poincaré diagrams of the short-term (A) and long-term (B) ECGs. The diagram
 
 **F1 score vs. CO2 emissions**
 
-<img src='https://www.frontiersin.org/files/Articles/1229743/fcvm-10-1229743-HTML/image_m/fcvm-10-1229743-g004.jpg' width='50%'>
+<img src='https://www.frontiersin.org/files/Articles/1229743/fcvm-10-1229743-HTML/image_m/fcvm-10-1229743-g004.jpg' width='80%'>
 
 Left side - models learned over CinC 2017 dataset; right side - models learned over CinC 2020 dataset. Dotted red ellipses highlight relatively heavy models.
 
 ## Citation
 
-```
+```bibtex
 @article{pham2023,
     author={Pham, Huy and Egorov, Konstantin and Kazakov, Alexey and Budennyy, Semen},
     title={Machine learning-based detection of cardiovascular disease using ECG signals: performance vs. complexity},
@@ -107,3 +116,4 @@ Left side - models learned over CinC 2017 dataset; right side - models learned o
     issn={2297-055X}
 }
 ```
+Feel free to explore the research, reproduce experiments, and contribute to advancing cardiovascular disease detection using machine learning.
